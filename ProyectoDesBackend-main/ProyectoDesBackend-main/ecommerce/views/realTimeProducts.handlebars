@@ -1,0 +1,70 @@
+<h1>Lista de Productos en Tiempo Real</h1>
+<ul id="productList">
+    {{#each products}}
+        <li>
+            {{this.title}} - {{this.price}} 
+            <form action="/carts/{{cartId}}/products/{{this._id}}" method="POST" style="display:inline;">
+                <button type="submit">Agregar al carrito</button>
+            </form>
+        </li>
+    {{/each}}
+</ul>
+
+<h2>Agregar Producto</h2>
+<form id="productForm">
+    <input type="text" id="title" placeholder="Título" required>
+    <input type="text" id="description" placeholder="Descripción" required>
+    <input type="text" id="code" placeholder="Código" required>
+    <input type="number" id="price" placeholder="Precio" required>
+    <input type="number" id="stock" placeholder="Stock" required>
+    <input type="text" id="category" placeholder="Categoría" required>
+    <input type="text" id="thumbnails" placeholder="Thumbnails (separados por comas)" required>
+    <button type="submit">Agregar</button>
+</form>
+
+<h2>Eliminar Producto</h2>
+<form id="deleteForm">
+    <input type="number" id="productId" placeholder="ID del Producto" required>
+    <button type="submit">Eliminar</button>
+</form>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    // Actualizar la lista de productos
+    socket.on('updateProducts', (products) => {
+        const productList = document.getElementById('productList');
+        productList.innerHTML = '';
+        products.forEach(product => {
+            const li = document.createElement('li');
+            li.innerHTML = `Producto: ${product.title} - Precio: ${product.price} - Stock: ${product.stock}
+                <form action="/carts/{{cartId}}/products/${product._id}" method="POST" style="display:inline;">
+                    <button type="submit">Agregar al carrito</button>
+                </form>`;
+            productList.appendChild(li);
+        });
+    });
+
+    // Manejar el envío del formulario de agregar producto
+    document.getElementById('productForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const product = {
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            code: document.getElementById('code').value,
+            price: document.getElementById('price').value,
+            stock: document.getElementById('stock').value,
+            category: document.getElementById('category').value,
+            thumbnails: document.getElementById('thumbnails').value.split(',')
+        };
+        socket.emit('newProduct', product);
+    });
+
+    // Manejar el envío del formulario de eliminar producto
+    document.getElementById('deleteForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const productId = document.getElementById('productId').value;
+        socket.emit('deleteProduct', Number(productId));
+    });
+</script>
